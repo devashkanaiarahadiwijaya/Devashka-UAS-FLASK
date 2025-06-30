@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Data Penjualan Ayam McDonald's</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #c60e11;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(50, 106, 128, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #ffd000;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    form input, form button {
+      padding: 10px;
+      font-size: 1em;
+    }
+
+    form button {
+      grid-column: span 2;
+      background-color: #1a0707;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 30px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #fc0505;
+    }
+
+    .actions button {
+      padding: 6px 12px;
+      margin: 2px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .edit-btn {
+      background-color: #fff700;
+      color: white;
+    }
+
+    .delete-btn {
+      background-color: #f90707;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1> Data Penjualan Ayam McDonald</h1>
+
+    <form id="formPenjualan">
+      <input type="text" id="nama_pembeli" placeholder="Nama Pembeli" required />
+      <input type="text" id="nama_barang" placeholder="Nama Barang" required />
+      <input type="date" id="tanggal_jual" required />
+      <input type="number" id="jumlah_barang" placeholder="Jumlah Barang" required />
+      <button type="submit">Simpan</button>
+    </form>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nama Pembeli</th>
+          <th>Nama Barang</th>
+          <th>Tanggal </th>
+          <th>Jumlah</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="dataBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const API_URL = "/penjualan";
+    let editId = null;
+
+    document.getElementById('formPenjualan').addEventListener('submit', handleSubmit);
+
+    function loadData() {
+      fetch(API_URL)
+        .then(res => res.json())
+        .then(data => {
+          const body = document.getElementById('dataBody');
+          body.innerHTML = '';
+          data.forEach(d => {
+            body.innerHTML += `
+              <tr>
+                <td>${d.id}</td>
+                <td>${d.nama_pembeli}</td>
+                <td>${d.nama_barang}</td>
+                <td>${d.tanggal_jual}</td>
+                <td>${d.jumlah_barang}</td>
+                <td class="actions">
+                  <button class="edit-btn" onclick="editData(${d.id})">Edit</button>
+                  <button class="delete-btn" onclick="deleteData(${d.id})">Hapus</button>
+                </td>
+              </tr>
+            `;
+          });
+        });
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      const data = {
+        nama_pembeli: document.getElementById('nama_pembeli').value,
+        nama_barang: document.getElementById('nama_barang').value,
+        tanggal_jual: document.getElementById('tanggal_jual').value,
+        jumlah_barang: parseInt(document.getElementById('jumlah_barang').value)
+      };
+
+      const method = editId ? 'PUT' : 'POST';
+      const url = editId ? `${API_URL}/${editId}` : API_URL;
+
+      fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      }).then(res => res.json())
+        .then(() => {
+          document.getElementById('formPenjualan').reset();
+          editId = null;
+          loadData();
+        });
+    }
+
+    function editData(id) {
+      fetch(`${API_URL}/${id}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('nama_pembeli').value = data.nama_pembeli;
+          document.getElementById('nama_barang').value = data.nama_barang;
+          document.getElementById('tanggal_jual').value = data.tanggal_jual;
+          document.getElementById('jumlah_barang').value = data.jumlah_barang;
+          editId = id;
+        });
+    }
+
+    function deleteData(id) {
+      if (confirm('Yakin ingin menghapus data ini?')) {
+        fetch(`${API_URL}/${id}`, {
+          method: 'DELETE'
+        }).then(() => loadData());
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadData);
+  </script>
+</body>
+</html>
